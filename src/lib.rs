@@ -124,6 +124,78 @@ impl Compressor {
         }
     }
 
+    /// Compress data using adaptive method selection.
+    /// Tries multiple algorithms and returns the best result.
+    pub fn compress_adaptive(&self, data: &[u8]) -> Result<CompressedOutput, CompressError> {
+        if data.is_empty() {
+            return Err(CompressError::EmptyInput);
+        }
+
+        let entropy = self.compute_entropy(data);
+        let has_repeated_blocks = self.detect_block_repetition(data);
+
+        // Build candidate list based on data characteristics
+        let mut candidates = Vec::new();
+
+        if entropy < 2.0 {
+            // Very low entropy: Huffman is likely best
+            candidates.push(CompressionMethod::Huffman);
+        } else if has_repeated_blocks && data.len() > 256 {
+            // Repeated blocks: try semantic dedup first, then LZ4
+            candidates.push(CompressionMethod::SemanticDedupe);
+            candidates.push(CompressionMethod::Lz4Semantic);
+        } else if data.len() > 4096 {
+            // Large data: LZ4 for speed
+            candidates.push(CompressionMethod::Lz4Semantic);
+            candidates.push(CompressionMethod::Huffman);
+        } else {
+            // Small high-entropy data
+            candidates.push(CompressionMethod::EntropyCoding);
+            candidates.push(CompressionMethod::Huffman);
+        }
+
+        // Try each candidate and pick the best ratio
+        let mut best: Option<CompressedOutput> = None;
+        for method in candidates {
+            if let Ok(result) = self.compress(data, method) {
+                if best.as_ref().map_or(true, |b| result.ratio < b.ratio) {
+                    best = Some(result);
+                }
+            }
+        }
+
+        best.ok_or(CompressError::EmptyInput)
+    }
+
+    /// Detect if data has repeated 64-byte blocks (indicator for semantic dedup)
+    fn detect_block_repetition(&self, data: &[u8]) -> bool {
+        if data.len() < 128 {
+            return false;
+        }
+        let block_size = 64;
+        let mut seen = std::collections::HashSet::new();
+        let mut duplicates = 0;
+        let total_blocks = data.len() / block_size;
+
+        for chunk in data.chunks(block_size) {
+            if chunk.len() == block_size {
+                let hash = {
+                    let mut h: u64 = 0xcbf29ce484222325;
+                    for &b in chunk {
+                        h ^= b as u64;
+                        h = h.wrapping_mul(0x100000001b3);
+                    }
+                    h
+                };
+                if !seen.insert(hash) {
+                    duplicates += 1;
+                }
+            }
+        }
+
+        total_blocks > 0 && (duplicates as f64 / total_blocks as f64) > 0.1
+    }
+
     /// Automatically select the best compression method based on data analysis
     fn select_method(&self, data: &[u8]) -> CompressionMethod {
         let entropy = self.compute_entropy(data);
