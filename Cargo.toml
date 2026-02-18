@@ -28,6 +28,3 @@ rand = "0.8"
 simd = []
 python-bindings = []
 
-[[bench]]
-name = "compression_benchmarks"
-harness = false
