@@ -7,6 +7,7 @@ use crate::error::CompressError;
 
 /// Client for Ryzanstein semantic services
 pub struct RyzansteinCompressClient {
+    #[allow(dead_code)]
     base_url: String,
 }
 
@@ -29,7 +30,11 @@ impl RyzansteinCompressClient {
         if a.len() != b.len() || a.is_empty() {
             return 0.0;
         }
-        let dot: f64 = a.iter().zip(b).map(|(x, y)| (*x as f64) * (*y as f64)).sum();
+        let dot: f64 = a
+            .iter()
+            .zip(b)
+            .map(|(x, y)| (*x as f64) * (*y as f64))
+            .sum();
         let mag_a: f64 = a.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt();
         let mag_b: f64 = b.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt();
         if mag_a * mag_b < 1e-10 {
