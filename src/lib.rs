@@ -15,6 +15,7 @@ pub mod lz4_wrapper;
 pub mod entropy;
 pub mod semantic;
 pub mod ryzanstein_integration;
+pub mod streaming;
 
 use crate::config::CompressionConfig;
 use crate::error::CompressError;
