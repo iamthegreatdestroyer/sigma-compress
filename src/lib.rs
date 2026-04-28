@@ -9,12 +9,12 @@
 //! Chooses the optimal strategy based on content analysis.
 
 pub mod config;
+pub mod entropy;
 pub mod error;
 pub mod huffman;
 pub mod lz4_wrapper;
-pub mod entropy;
-pub mod semantic;
 pub mod ryzanstein_integration;
+pub mod semantic;
 pub mod streaming;
 
 use crate::config::CompressionConfig;
@@ -75,7 +75,11 @@ impl Compressor {
     }
 
     /// Compress data using the specified method
-    pub fn compress(&self, data: &[u8], method: CompressionMethod) -> Result<CompressedOutput, CompressError> {
+    pub fn compress(
+        &self,
+        data: &[u8],
+        method: CompressionMethod,
+    ) -> Result<CompressedOutput, CompressError> {
         if data.is_empty() {
             return Err(CompressError::EmptyInput);
         }
@@ -88,9 +92,13 @@ impl Compressor {
 
         let compressed = match method {
             CompressionMethod::Huffman => huffman::compress(data)?,
-            CompressionMethod::Lz4Semantic => lz4_wrapper::compress(data, self.config.lz4_block_size)?,
+            CompressionMethod::Lz4Semantic => {
+                lz4_wrapper::compress(data, self.config.lz4_block_size)?
+            }
             CompressionMethod::EntropyCoding => entropy::compress(data)?,
-            CompressionMethod::SemanticDedupe => semantic::compress(data, self.config.dedup_threshold)?,
+            CompressionMethod::SemanticDedupe => {
+                semantic::compress(data, self.config.dedup_threshold)?
+            }
             CompressionMethod::Auto => unreachable!(),
         };
 
@@ -118,9 +126,15 @@ impl Compressor {
     pub fn decompress(&self, output: &CompressedOutput) -> Result<Vec<u8>, CompressError> {
         match output.method {
             CompressionMethod::Huffman => huffman::decompress(&output.data, output.original_size),
-            CompressionMethod::Lz4Semantic => lz4_wrapper::decompress(&output.data, output.original_size),
-            CompressionMethod::EntropyCoding => entropy::decompress(&output.data, output.original_size),
-            CompressionMethod::SemanticDedupe => semantic::decompress(&output.data, output.original_size),
+            CompressionMethod::Lz4Semantic => {
+                lz4_wrapper::decompress(&output.data, output.original_size)
+            }
+            CompressionMethod::EntropyCoding => {
+                entropy::decompress(&output.data, output.original_size)
+            }
+            CompressionMethod::SemanticDedupe => {
+                semantic::decompress(&output.data, output.original_size)
+            }
             CompressionMethod::Auto => Err(CompressError::InvalidMethod),
         }
     }
@@ -238,7 +252,9 @@ mod tests {
     fn test_compress_huffman() {
         let compressor = Compressor::default();
         let data = b"hello world hello world hello world";
-        let result = compressor.compress(data, CompressionMethod::Huffman).unwrap();
+        let result = compressor
+            .compress(data, CompressionMethod::Huffman)
+            .unwrap();
         assert!(result.compressed_size > 0);
         assert_eq!(result.original_size, data.len());
         assert_eq!(result.method, CompressionMethod::Huffman);
@@ -248,7 +264,9 @@ mod tests {
     fn test_compress_lz4() {
         let compressor = Compressor::default();
         let data = b"repeated repeated repeated repeated";
-        let result = compressor.compress(data, CompressionMethod::Lz4Semantic).unwrap();
+        let result = compressor
+            .compress(data, CompressionMethod::Lz4Semantic)
+            .unwrap();
         assert!(result.compressed_size > 0);
     }
 
@@ -263,7 +281,9 @@ mod tests {
     fn test_roundtrip_huffman() {
         let compressor = Compressor::default();
         let data = b"the quick brown fox jumps over the lazy dog";
-        let compressed = compressor.compress(data, CompressionMethod::Huffman).unwrap();
+        let compressed = compressor
+            .compress(data, CompressionMethod::Huffman)
+            .unwrap();
         let decompressed = compressor.decompress(&compressed).unwrap();
         assert_eq!(decompressed, data);
     }
@@ -272,7 +292,9 @@ mod tests {
     fn test_auto_selection() {
         let compressor = Compressor::default();
         let low_entropy = vec![0u8; 1000];
-        let result = compressor.compress(&low_entropy, CompressionMethod::Auto).unwrap();
+        let result = compressor
+            .compress(&low_entropy, CompressionMethod::Auto)
+            .unwrap();
         assert_eq!(result.method, CompressionMethod::Huffman);
     }
 
@@ -288,7 +310,9 @@ mod tests {
     fn test_compression_ratio() {
         let compressor = Compressor::default();
         let data = "aaaaaaaaaa".repeat(100);
-        let result = compressor.compress(data.as_bytes(), CompressionMethod::Huffman).unwrap();
+        let result = compressor
+            .compress(data.as_bytes(), CompressionMethod::Huffman)
+            .unwrap();
         assert!(result.ratio < 1.0, "repetitive data should compress well");
     }
 }

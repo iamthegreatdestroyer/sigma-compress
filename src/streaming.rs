@@ -63,10 +63,12 @@ impl StreamingDecompressor {
         let client = reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(self.config.timeout_secs))
             .build()
-            .map_err(|e| CompressError::IoError(std::io::Error::new(
-                std::io::ErrorKind::Other,
-                format!("HTTP client error: {e}"),
-            )))?;
+            .map_err(|e| {
+                CompressError::IoError(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("HTTP client error: {e}"),
+                ))
+            })?;
 
         let mut last_err = None;
         for attempt in 0..=self.config.max_retries {
@@ -83,10 +85,12 @@ impl StreamingDecompressor {
             }
         }
 
-        Err(last_err.unwrap_or(CompressError::IoError(std::io::Error::new(
-            std::io::ErrorKind::Other,
-            "All download attempts exhausted",
-        ))))
+        Err(
+            last_err.unwrap_or(CompressError::IoError(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                "All download attempts exhausted",
+            ))),
+        )
     }
 
     /// Single download attempt.
@@ -95,14 +99,12 @@ impl StreamingDecompressor {
         client: &reqwest::Client,
         url: &str,
     ) -> Result<Vec<u8>, CompressError> {
-        let response = client
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| CompressError::IoError(std::io::Error::new(
+        let response = client.get(url).send().await.map_err(|e| {
+            CompressError::IoError(std::io::Error::new(
                 std::io::ErrorKind::ConnectionRefused,
                 format!("Request failed: {e}"),
-            )))?;
+            ))
+        })?;
 
         if !response.status().is_success() {
             return Err(CompressError::RyzansteinError(format!(
@@ -112,18 +114,18 @@ impl StreamingDecompressor {
             )));
         }
 
-        let bytes = response
-            .bytes()
-            .await
-            .map_err(|e| CompressError::IoError(std::io::Error::new(
+        let bytes = response.bytes().await.map_err(|e| {
+            CompressError::IoError(std::io::Error::new(
                 std::io::ErrorKind::UnexpectedEof,
                 format!("Failed to read response body: {e}"),
-            )))?;
+            ))
+        })?;
 
-        let compressed: CompressedOutput = bincode::deserialize(&bytes)
-            .map_err(|e| CompressError::SerializationError(format!(
+        let compressed: CompressedOutput = bincode::deserialize(&bytes).map_err(|e| {
+            CompressError::SerializationError(format!(
                 "Failed to deserialize CompressedOutput: {e}"
-            )))?;
+            ))
+        })?;
 
         self.compressor.decompress(&compressed)
     }
@@ -146,10 +148,9 @@ impl StreamingDecompressor {
             return Err(CompressError::EmptyInput);
         }
 
-        let compressed: CompressedOutput = bincode::deserialize(&buf)
-            .map_err(|e| CompressError::SerializationError(format!(
-                "Stream deserialization failed: {e}"
-            )))?;
+        let compressed: CompressedOutput = bincode::deserialize(&buf).map_err(|e| {
+            CompressError::SerializationError(format!("Stream deserialization failed: {e}"))
+        })?;
 
         self.compressor.decompress(&compressed)
     }
@@ -188,10 +189,9 @@ impl StreamingDecompressor {
                 .await
                 .map_err(CompressError::IoError)?;
 
-            let compressed: CompressedOutput = bincode::deserialize(&chunk_buf)
-                .map_err(|e| CompressError::SerializationError(format!(
-                    "Chunk deserialization failed: {e}"
-                )))?;
+            let compressed: CompressedOutput = bincode::deserialize(&chunk_buf).map_err(|e| {
+                CompressError::SerializationError(format!("Chunk deserialization failed: {e}"))
+            })?;
 
             let decompressed = self.compressor.decompress(&compressed)?;
             total_bytes += decompressed.len();

@@ -4,11 +4,11 @@
 //! decompressor construction, stream decompression error paths,
 //! and chunked decompression with length-prefixed framing.
 
-use sigma_compress::*;
 use sigma_compress::streaming::{StreamingConfig, StreamingDecompressor};
-use tokio::io::AsyncRead;
+use sigma_compress::*;
 use std::pin::Pin;
 use std::task::{Context, Poll};
+use tokio::io::AsyncRead;
 
 // ---------------------------------------------------------------------------
 // Sync tests
@@ -106,7 +106,10 @@ async fn test_decompress_stream_invalid_data_returns_error() {
     // Feed random bytes that are not valid bincode-serialized CompressedOutput.
     let mut reader = MockReader::new(vec![0xDE, 0xAD, 0xBE, 0xEF, 0x01, 0x02, 0x03]);
     let result = decompressor.decompress_stream(&mut reader).await;
-    assert!(result.is_err(), "Invalid data should produce a deserialization error");
+    assert!(
+        result.is_err(),
+        "Invalid data should produce a deserialization error"
+    );
 }
 
 #[tokio::test]
@@ -114,7 +117,9 @@ async fn test_decompress_chunked_single_chunk() {
     // 1. Compress real data
     let compressor = Compressor::default();
     let original = b"Hello streaming world! This is a chunked decompression test.";
-    let compressed = compressor.compress(original, CompressionMethod::Lz4Semantic).expect("compress should succeed");
+    let compressed = compressor
+        .compress(original, CompressionMethod::Lz4Semantic)
+        .expect("compress should succeed");
 
     // 2. Serialize to bincode
     let serialized = bincode::serialize(&compressed).expect("serialize should succeed");
@@ -151,8 +156,12 @@ async fn test_decompress_chunked_multiple_chunks() {
     // Compress two distinct payloads
     let data_a = b"First chunk payload for multi-chunk test";
     let data_b = b"Second chunk payload -- verifying multi-frame";
-    let compressed_a = compressor.compress(data_a, CompressionMethod::Lz4Semantic).expect("compress a");
-    let compressed_b = compressor.compress(data_b, CompressionMethod::Lz4Semantic).expect("compress b");
+    let compressed_a = compressor
+        .compress(data_a, CompressionMethod::Lz4Semantic)
+        .expect("compress a");
+    let compressed_b = compressor
+        .compress(data_b, CompressionMethod::Lz4Semantic)
+        .expect("compress b");
 
     let ser_a = bincode::serialize(&compressed_a).expect("serialize a");
     let ser_b = bincode::serialize(&compressed_b).expect("serialize b");
@@ -197,6 +206,9 @@ async fn test_decompress_chunked_empty_sentinel_only() {
         .await
         .expect("sentinel-only should succeed");
 
-    assert!(chunks.is_empty(), "No chunks expected for sentinel-only stream");
+    assert!(
+        chunks.is_empty(),
+        "No chunks expected for sentinel-only stream"
+    );
     assert_eq!(total_bytes, 0);
 }
