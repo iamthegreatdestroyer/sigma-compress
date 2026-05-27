@@ -64,10 +64,7 @@ impl StreamingDecompressor {
             .timeout(std::time::Duration::from_secs(self.config.timeout_secs))
             .build()
             .map_err(|e| {
-                CompressError::IoError(std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    format!("HTTP client error: {e}"),
-                ))
+                CompressError::IoError(std::io::Error::other(format!("HTTP client error: {e}")))
             })?;
 
         let mut last_err = None;
@@ -86,8 +83,7 @@ impl StreamingDecompressor {
         }
 
         Err(
-            last_err.unwrap_or(CompressError::IoError(std::io::Error::new(
-                std::io::ErrorKind::Other,
+            last_err.unwrap_or(CompressError::IoError(std::io::Error::other(
                 "All download attempts exhausted",
             ))),
         )

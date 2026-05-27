@@ -6,7 +6,7 @@ use crate::error::CompressError;
 pub fn compress(data: &[u8], block_size: usize) -> Result<Vec<u8>, CompressError> {
     // Simple LZ4-like compression: store block headers + compressed blocks
     let mut output = Vec::new();
-    let num_blocks = (data.len() + block_size - 1) / block_size;
+    let num_blocks = data.len().div_ceil(block_size);
     output.extend_from_slice(&(num_blocks as u32).to_le_bytes());
 
     for chunk in data.chunks(block_size) {

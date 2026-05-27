@@ -22,7 +22,7 @@ pub fn compress(data: &[u8]) -> Result<Vec<u8>, CompressError> {
 
 /// Decompress RLE-encoded data
 pub fn decompress(data: &[u8], original_size: usize) -> Result<Vec<u8>, CompressError> {
-    if data.len() % 2 != 0 {
+    if !data.len().is_multiple_of(2) {
         return Err(CompressError::EntropyError("invalid RLE data".into()));
     }
     let mut output = Vec::with_capacity(original_size);

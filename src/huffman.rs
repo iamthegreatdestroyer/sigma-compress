@@ -3,8 +3,8 @@
 //! Implements classic Huffman coding for symbol-level compression.
 
 use crate::error::CompressError;
-use std::collections::{BinaryHeap, HashMap};
 use std::cmp::Ordering;
+use std::collections::{BinaryHeap, HashMap};
 
 #[derive(Debug, Clone)]
 struct HuffNode {
@@ -83,7 +83,11 @@ fn build_tree(data: &[u8]) -> Option<HuffNode> {
 
 fn build_codes(node: &HuffNode, prefix: Vec<bool>, codes: &mut HashMap<u8, Vec<bool>>) {
     if let Some(sym) = node.symbol {
-        let code = if prefix.is_empty() { vec![false] } else { prefix };
+        let code = if prefix.is_empty() {
+            vec![false]
+        } else {
+            prefix
+        };
         codes.insert(sym, code);
         return;
     }
@@ -186,7 +190,7 @@ pub fn decompress(data: &[u8], original_size: usize) -> Result<Vec<u8>, Compress
         let code_len = data[pos] as usize;
         pos += 1;
 
-        let num_bytes = (code_len + 7) / 8;
+        let num_bytes = code_len.div_ceil(8);
         let mut code = Vec::with_capacity(code_len);
         for byte_idx in 0..num_bytes {
             if pos >= data.len() {
@@ -208,7 +212,8 @@ pub fn decompress(data: &[u8], original_size: usize) -> Result<Vec<u8>, Compress
     if pos + 4 > data.len() {
         return Err(CompressError::HuffmanError("missing data length".into()));
     }
-    let _stored_len = u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
+    let _stored_len =
+        u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]]) as usize;
     pos += 4;
 
     // Decode bits

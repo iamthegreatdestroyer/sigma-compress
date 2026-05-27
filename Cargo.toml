@@ -24,6 +24,10 @@ tempfile = "3.9"
 criterion = { version = "0.5", features = ["html_reports"] }
 rand = "0.8"
 
+[[bench]]
+name = "compression_bench"
+harness = false
+
 [features]
 simd = []
 python-bindings = []

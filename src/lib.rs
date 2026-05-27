@@ -13,6 +13,7 @@ pub mod entropy;
 pub mod error;
 pub mod huffman;
 pub mod lz4_wrapper;
+pub mod minhash;
 pub mod ryzanstein_integration;
 pub mod semantic;
 pub mod streaming;
@@ -67,11 +68,6 @@ impl Compressor {
     /// Create a new compressor with the given configuration
     pub fn new(config: CompressionConfig) -> Self {
         Self { config }
-    }
-
-    /// Create a compressor with default configuration
-    pub fn default() -> Self {
-        Self::new(CompressionConfig::default())
     }
 
     /// Compress data using the specified method
@@ -173,7 +169,7 @@ impl Compressor {
         let mut best: Option<CompressedOutput> = None;
         for method in candidates {
             if let Ok(result) = self.compress(data, method) {
-                if best.as_ref().map_or(true, |b| result.ratio < b.ratio) {
+                if best.as_ref().is_none_or(|b| result.ratio < b.ratio) {
                     best = Some(result);
                 }
             }
@@ -241,6 +237,12 @@ impl Compressor {
             }
         }
         entropy
+    }
+}
+
+impl Default for Compressor {
+    fn default() -> Self {
+        Self::new(CompressionConfig::default())
     }
 }
 
