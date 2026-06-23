@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub fn compress(data: &[u8], method: CompressionMethod) -> Result<Vec<u8>, CompressError> {
     match method {
         CompressionMethod::Huffman => huffman::compress(data),
-        CompressionMethod::Lz4Semantic => lz4_wrapper::compress(data, 65536),
+        CompressionMethod::DeflateSemantic => deflate_wrapper::compress(data, 65536),
         CompressionMethod::EntropyCoding => entropy::compress(data),
         CompressionMethod::SemanticDedupe => semantic::compress(data, 0.95),
         CompressionMethod::Auto => {
@@ -22,7 +22,7 @@ pub fn compress(data: &[u8], method: CompressionMethod) -> Result<Vec<u8>, Compr
             if entropy < 3.0 {
                 huffman::compress(data)
             } else {
-                lz4_wrapper::compress(data, 65536)
+                deflate_wrapper::compress(data, 65536)
             }
         }
     }
@@ -75,13 +75,13 @@ fn bench_huffman_1mb(c: &mut Criterion) {
     });
 }
 
-fn bench_lz4_1mb(c: &mut Criterion) {
+fn bench_deflate_1mb(c: &mut Criterion) {
     let data = make_rust_text_1mb();
     let compressor = Compressor::default();
-    c.bench_function("lz4_1mb", |b| {
+    c.bench_function("deflate_1mb", |b| {
         b.iter(|| {
             compressor
-                .compress(black_box(&data), CompressionMethod::Lz4Semantic)
+                .compress(black_box(&data), CompressionMethod::DeflateSemantic)
                 .unwrap()
         })
     });
@@ -188,7 +188,7 @@ fn bench_auto_select_1mb(c: &mut Criterion) {
 criterion_group!(
     benches,
     bench_huffman_1mb,
-    bench_lz4_1mb,
+    bench_deflate_1mb,
     bench_entropy_1mb,
     bench_semantic_dedup_1k,
     bench_minhash_10k,

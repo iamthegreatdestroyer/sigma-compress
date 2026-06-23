@@ -2,7 +2,7 @@
 //!
 //! Combines multiple compression strategies:
 //! - Huffman coding for symbol-level compression
-//! - LZ4 for fast block compression
+//! - Deflate for fast block compression
 //! - Entropy coding for near-optimal bitstream output
 //! - Semantic deduplication via Ryzanstein embeddings
 //!
@@ -12,7 +12,7 @@ pub mod config;
 pub mod entropy;
 pub mod error;
 pub mod huffman;
-pub mod lz4_wrapper;
+pub mod deflate_wrapper;
 pub mod minhash;
 pub mod ryzanstein_integration;
 pub mod semantic;
@@ -25,7 +25,7 @@ use crate::error::CompressError;
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum CompressionMethod {
     Huffman,
-    Lz4Semantic,
+    DeflateSemantic,
     EntropyCoding,
     SemanticDedupe,
     Auto,
@@ -88,8 +88,8 @@ impl Compressor {
 
         let compressed = match method {
             CompressionMethod::Huffman => huffman::compress(data)?,
-            CompressionMethod::Lz4Semantic => {
-                lz4_wrapper::compress(data, self.config.lz4_block_size)?
+            CompressionMethod::DeflateSemantic => {
+                deflate_wrapper::compress(data, self.config.deflate_block_size)?
             }
             CompressionMethod::EntropyCoding => entropy::compress(data)?,
             CompressionMethod::SemanticDedupe => {
@@ -113,7 +113,7 @@ impl Compressor {
             metadata: CompressionMetadata {
                 entropy_bits: self.compute_entropy(data),
                 semantic_dedup_count: 0,
-                block_count: (data.len() / self.config.lz4_block_size).max(1),
+                block_count: (data.len() / self.config.deflate_block_size).max(1),
             },
         })
     }
@@ -122,8 +122,8 @@ impl Compressor {
     pub fn decompress(&self, output: &CompressedOutput) -> Result<Vec<u8>, CompressError> {
         match output.method {
             CompressionMethod::Huffman => huffman::decompress(&output.data, output.original_size),
-            CompressionMethod::Lz4Semantic => {
-                lz4_wrapper::decompress(&output.data, output.original_size)
+            CompressionMethod::DeflateSemantic => {
+                deflate_wrapper::decompress(&output.data, output.original_size)
             }
             CompressionMethod::EntropyCoding => {
                 entropy::decompress(&output.data, output.original_size)
@@ -154,10 +154,10 @@ impl Compressor {
         } else if has_repeated_blocks && data.len() > 256 {
             // Repeated blocks: try semantic dedup first, then LZ4
             candidates.push(CompressionMethod::SemanticDedupe);
-            candidates.push(CompressionMethod::Lz4Semantic);
+            candidates.push(CompressionMethod::DeflateSemantic);
         } else if data.len() > 4096 {
             // Large data: LZ4 for speed
-            candidates.push(CompressionMethod::Lz4Semantic);
+            candidates.push(CompressionMethod::DeflateSemantic);
             candidates.push(CompressionMethod::Huffman);
         } else {
             // Small high-entropy data
@@ -213,7 +213,7 @@ impl Compressor {
         if entropy < 3.0 {
             CompressionMethod::Huffman
         } else if data.len() > 4096 {
-            CompressionMethod::Lz4Semantic
+            CompressionMethod::DeflateSemantic
         } else {
             CompressionMethod::EntropyCoding
         }
@@ -263,11 +263,11 @@ mod tests {
     }
 
     #[test]
-    fn test_compress_lz4() {
+    fn test_compress_deflate() {
         let compressor = Compressor::default();
         let data = b"repeated repeated repeated repeated";
         let result = compressor
-            .compress(data, CompressionMethod::Lz4Semantic)
+            .compress(data, CompressionMethod::DeflateSemantic)
             .unwrap();
         assert!(result.compressed_size > 0);
     }

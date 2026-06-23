@@ -13,8 +13,8 @@ pub enum CompressError {
     #[error("huffman encoding error: {0}")]
     HuffmanError(String),
 
-    #[error("lz4 error: {0}")]
-    Lz4Error(String),
+    #[error("deflate error: {0}")]
+    DeflateError(String),
 
     #[error("entropy coding error: {0}")]
     EntropyError(String),

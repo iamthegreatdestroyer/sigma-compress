@@ -19,7 +19,7 @@ fn test_all_methods_roundtrip() {
 
     for method in [
         CompressionMethod::Huffman,
-        CompressionMethod::Lz4Semantic,
+        CompressionMethod::DeflateSemantic,
         CompressionMethod::EntropyCoding,
         CompressionMethod::SemanticDedupe,
     ] {
@@ -47,7 +47,7 @@ fn test_binary_data() {
     let compressor = Compressor::default();
     let data: Vec<u8> = (0..=255).cycle().take(2000).collect();
     let compressed = compressor
-        .compress(&data, CompressionMethod::Lz4Semantic)
+        .compress(&data, CompressionMethod::DeflateSemantic)
         .unwrap();
     let decompressed = compressor.decompress(&compressed).unwrap();
     assert_eq!(decompressed, data);
@@ -68,14 +68,14 @@ fn test_metadata_populated() {
 fn test_compression_config() {
     use sigma_compress::config::CompressionConfig;
     let config = CompressionConfig {
-        lz4_block_size: 1024,
+        deflate_block_size: 1024,
         dedup_threshold: 0.9,
         ..CompressionConfig::default()
     };
     let compressor = Compressor::new(config);
     let data = b"config test data with custom block size";
     let result = compressor
-        .compress(data, CompressionMethod::Lz4Semantic)
+        .compress(data, CompressionMethod::DeflateSemantic)
         .unwrap();
     assert!(result.compressed_size > 0);
 }

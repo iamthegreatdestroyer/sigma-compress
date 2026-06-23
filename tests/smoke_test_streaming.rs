@@ -118,7 +118,7 @@ async fn test_decompress_chunked_single_chunk() {
     let compressor = Compressor::default();
     let original = b"Hello streaming world! This is a chunked decompression test.";
     let compressed = compressor
-        .compress(original, CompressionMethod::Lz4Semantic)
+        .compress(original, CompressionMethod::DeflateSemantic)
         .expect("compress should succeed");
 
     // 2. Serialize to bincode
@@ -157,10 +157,10 @@ async fn test_decompress_chunked_multiple_chunks() {
     let data_a = b"First chunk payload for multi-chunk test";
     let data_b = b"Second chunk payload -- verifying multi-frame";
     let compressed_a = compressor
-        .compress(data_a, CompressionMethod::Lz4Semantic)
+        .compress(data_a, CompressionMethod::DeflateSemantic)
         .expect("compress a");
     let compressed_b = compressor
-        .compress(data_b, CompressionMethod::Lz4Semantic)
+        .compress(data_b, CompressionMethod::DeflateSemantic)
         .expect("compress b");
 
     let ser_a = bincode::serialize(&compressed_a).expect("serialize a");
