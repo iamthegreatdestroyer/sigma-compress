@@ -16,6 +16,7 @@ pub mod deflate_wrapper;
 pub mod minhash;
 pub mod ryzanstein_integration;
 pub mod semantic;
+pub mod similarity;
 pub mod streaming;
 
 use crate::config::CompressionConfig;

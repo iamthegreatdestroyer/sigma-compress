@@ -25,23 +25,11 @@ impl RyzansteinCompressClient {
         Ok(blocks.iter().map(|b| self.fallback_embed(b)).collect())
     }
 
-    /// Compute similarity between two embedding vectors
+    /// Compute cosine similarity between two embedding vectors.
+    /// Delegates to the canonical `crate::similarity::cosine_similarity`
+    /// (kept as an associated fn for API compatibility).
     pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f64 {
-        if a.len() != b.len() || a.is_empty() {
-            return 0.0;
-        }
-        let dot: f64 = a
-            .iter()
-            .zip(b)
-            .map(|(x, y)| (*x as f64) * (*y as f64))
-            .sum();
-        let mag_a: f64 = a.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt();
-        let mag_b: f64 = b.iter().map(|x| (*x as f64).powi(2)).sum::<f64>().sqrt();
-        if mag_a * mag_b < 1e-10 {
-            0.0
-        } else {
-            dot / (mag_a * mag_b)
-        }
+        crate::similarity::cosine_similarity(a, b)
     }
 
     /// Health check for Ryzanstein connectivity
