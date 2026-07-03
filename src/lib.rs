@@ -87,14 +87,19 @@ impl Compressor {
             method
         };
 
-        let compressed = match method {
-            CompressionMethod::Huffman => huffman::compress(data)?,
-            CompressionMethod::DeflateSemantic => {
-                deflate_wrapper::compress(data, self.config.deflate_block_size)?
-            }
-            CompressionMethod::EntropyCoding => entropy::compress(data)?,
+        let (compressed, semantic_dedup_count) = match method {
+            CompressionMethod::Huffman => (huffman::compress(data)?, 0),
+            CompressionMethod::DeflateSemantic => (
+                deflate_wrapper::compress(data, self.config.deflate_block_size)?,
+                0,
+            ),
+            CompressionMethod::EntropyCoding => (entropy::compress(data)?, 0),
             CompressionMethod::SemanticDedupe => {
-                semantic::compress(data, self.config.dedup_threshold)?
+                let ryzanstein_url = self
+                    .config
+                    .enable_semantic
+                    .then(|| self.config.ryzanstein_url.clone());
+                semantic::compress_with_stats(data, self.config.dedup_threshold, ryzanstein_url)?
             }
             CompressionMethod::Auto => unreachable!(),
         };
@@ -113,7 +118,7 @@ impl Compressor {
             ratio,
             metadata: CompressionMetadata {
                 entropy_bits: self.compute_entropy(data),
-                semantic_dedup_count: 0,
+                semantic_dedup_count,
                 block_count: (data.len() / self.config.deflate_block_size).max(1),
             },
         })
