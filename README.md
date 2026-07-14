@@ -9,7 +9,7 @@ sigma-compress combines multiple compression strategies, automatically selecting
 | Method | Best For | Ratio | Speed |
 |--------|----------|-------|-------|
 | **Huffman** | Low-entropy, symbol-heavy data | Good | Fast |
-| **LZ4 Semantic** | Large blocks, repeated patterns | Excellent | Very Fast |
+| **Deflate Semantic** | Large blocks, repeated patterns | Excellent | Very Fast |
 | **Entropy Coding** | Run-length patterns | Good | Very Fast |
 | **Semantic Dedupe** | Code with repeated structures | Excellent | Medium |
 
@@ -46,7 +46,7 @@ Input Data
 └──────────────┘
     │
     ├─→ Huffman (low entropy)
-    ├─→ LZ4 Semantic (large blocks)
+    ├─→ Deflate Semantic (large blocks)
     ├─→ Entropy Coding (run patterns)
     └─→ Semantic Dedupe (code blocks)
          │
