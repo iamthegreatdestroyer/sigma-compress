@@ -5,7 +5,7 @@
 - **Local path:** `S:\sigma-compress`
 - **Language:** Rust
 - **Castle Layer:** Layer 4 — Storage & Inference
-- **Current completion:** ~75%
+- **Current completion:** 100% (v0.2.0 shipped)
 - **Mission:** Semantic-aware compression engine — Huffman + LZ4 + entropy coding + semantic deduplication, integrated with Ryzanstein embeddings
 
 ## Current State (verified 2026-05-25)
@@ -15,9 +15,11 @@
 | `entropy.rs` — entropy coding | ✅ Done |
 | `error.rs` — error types | ✅ Done |
 | `huffman.rs` — Huffman coding | ✅ Done |
-| `lz4_wrapper.rs` — LZ4 integration | ✅ Done |
+| `deflate_wrapper.rs` — Deflate integration (flate2) | ✅ Done |
 | `ryzanstein_integration.rs` — embedding client | ✅ Done |
 | `semantic.rs` — semantic dedup | ✅ Done |
+| `minhash.rs` — MinHash LSH near-duplicate detection | ✅ Done |
+| `similarity.rs` — shared cosine-similarity primitive | ✅ Done |
 | `streaming.rs` — streaming compression | ✅ Done |
 | `lib.rs` — public API | ✅ Done |
 | MinHash optimization (10M+ documents) | ❌ Missing |
@@ -34,7 +36,7 @@ sigma-compress/
 │   ├── entropy.rs          # Run-length entropy coding
 │   ├── error.rs            # CompressError enum
 │   ├── huffman.rs          # Huffman tree + encode/decode
-│   ├── lz4_wrapper.rs      # LZ4 compress/decompress via lz4 crate
+│   ├── deflate_wrapper.rs  # Deflate compress/decompress via flate2 crate
 │   ├── ryzanstein_integration.rs # HTTP client for /v1/embeddings
 │   ├── semantic.rs         # Semantic dedup: hash map + embedding similarity
 │   └── streaming.rs        # Block-based streaming compressor
