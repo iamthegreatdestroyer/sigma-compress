@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 description = "Semantic-aware compression using Huffman + LZ4 + entropy coding for Ryzanstein"
 license = "AGPL-3.0"
-authors = ["Ryzanstein Team"]
+authors = ["Stephen Bilodeau <sgbilod@gmail.com>"]
 
 [dependencies]
 lz4 = "1.24"
